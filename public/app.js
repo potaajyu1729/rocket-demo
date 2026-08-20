@@ -1,9 +1,15 @@
 const app = document.querySelector("#app");
 const connectionStatus = document.querySelector("#connection-status");
 const roomLabel = document.querySelector("#room-label");
-let session = JSON.parse(localStorage.getItem("team-orbit-session") || "null");
+let session = null;
 let state = null;
 let poller = null;
+
+try {
+  session = JSON.parse(localStorage.getItem("team-orbit-session") || "null");
+} catch {
+  localStorage.removeItem("team-orbit-session");
+}
 
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[char]));
 const api = async (path, options = {}) => { const response = await fetch(path, { headers: { "content-type": "application/json" }, ...options }); const data = await response.json(); if (!response.ok) throw new Error(data.error || "REQUEST_FAILED"); return data; };
