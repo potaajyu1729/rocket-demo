@@ -1,3 +1,6 @@
+.code-editor { display:block; width:100%; min-height:190px; resize:vertical; border:1px solid var(--ink); border-left:4px solid var(--orange); background:#152328; color:#f4f0e7; padding:20px; font:14px/1.7 'DM Mono'; outline:none; margin-bottom:14px; tab-size:2; }
+.code-editor:focus { box-shadow:0 0 0 3px rgba(20,108,106,.18); }
+#submit-code { margin-bottom:2px; }
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root { --ink:#152328; --paper:#f4f0e7; --orange:#f06439; --teal:#146c6a; --lime:#d8e56d; --line:rgba(21,35,40,.18); --muted:#687477; }

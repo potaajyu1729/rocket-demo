@@ -8,6 +8,8 @@ const questions = [
   { id: "deno-01", domain: "Deno", title: "HTTP サーバーの起動", prompt: "const server = Deno.____({ port: 8000 });", answer: "serve", options: ["serve", "listen", "start", "connect"], hint: "標準 API でリクエストを受け付けます。" },
   { id: "web-01", domain: "Web開発", title: "非同期処理の待機", prompt: "const response = await fetch(url); // この関数は ____ 関数内", answer: "async", options: ["async", "defer", "promise", "sync"], hint: "await と一緒に宣言します。" },
   { id: "js-02", domain: "JavaScript", title: "値がないときの代替値", prompt: "const port = env.PORT ____ 8000;", answer: "??", options: ["??", "||", "&&", "?:"], hint: "null と undefined のときだけ右辺を使います。" },
+  { id: "js-code-01", type: "code", language: "javascript", domain: "JavaScript", title: "配列を2倍にする関数を書こう", prompt: "numbers の各要素を2倍にした配列を返す関数 doubleNumbers を完成させてください。", starter: "function doubleNumbers(numbers) {\n  // write your code here\n}", acceptedAnswers: ["function doubleNumbers(numbers) { return numbers.map(number => number * 2); }", "function doubleNumbers(numbers) { return numbers.map((number) => number * 2); }"], hint: "map は元の配列を変えずに、新しい配列を返します。" },
+  { id: "deno-code-01", type: "code", language: "javascript", domain: "Deno", title: "Deno の JSON レスポンスを書こう", prompt: "status 200 と JSON の Content-Type を持つ Response を返してください。", starter: "function okJson(data) {\n  // write your code here\n}", acceptedAnswers: ["function okJson(data) { return new Response(JSON.stringify(data), { status: 200, headers: { 'content-type': 'application/json' } }); }", "function okJson(data) { return new Response(JSON.stringify(data), { status: 200, headers: { \"content-type\": \"application/json\" } }); }"], hint: "JSON.stringify と Response の組み合わせを使います。" },
 ];
 
 const rooms = new Map();
@@ -27,7 +29,9 @@ function makeRoom(code) {
 
 function getOrCreateRoom(code) { return rooms.get(code) ?? makeRoom(code); }
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } }); }
-function publicQuestion(question) { return { id: question.id, domain: question.domain, title: question.title, prompt: question.prompt, options: question.options, hint: question.hint }; }
+function publicQuestion(question) { return { id: question.id, type: question.type ?? "choice", language: question.language, domain: question.domain, title: question.title, prompt: question.prompt, starter: question.starter, options: question.options, hint: question.hint }; }
+
+function normalizeCode(value) { return String(value).replace(/\/\/.*$/gm, "").replace(/\s+/g, " ").replace(/\s*([{}();,:=])\s*/g, "$1").trim(); }
 
 function calculateTeam(room) {
   const people = [...room.participants.values()];
@@ -84,7 +88,11 @@ async function api(request, url) {
     if (room.phase !== "quiz") return json({ error: "QUIZ_NOT_ACTIVE" }, 409);
     if (person.answers.some((answer) => answer.questionId === data.questionId)) return json({ state: stateFor(room, person.id) });
     const question = questions.find((item) => item.id === data.questionId); if (!question) return json({ error: "QUESTION_NOT_FOUND" }, 404);
-    person.answers.push({ questionId: question.id, domain: question.domain, value: String(data.value), correct: String(data.value) === question.answer });
+    const submittedValue = String(data.value ?? "");
+    const correct = question.type === "code"
+      ? question.acceptedAnswers.some((answer) => normalizeCode(answer) === normalizeCode(submittedValue))
+      : submittedValue === question.answer;
+    person.answers.push({ questionId: question.id, domain: question.domain, value: submittedValue, correct });
     if ([...room.participants.values()].every((member) => member.answers.length === questions.length)) { room.phase = "launch"; room.completedAt = Date.now(); }
     return json({ state: stateFor(room, person.id) });
   }
