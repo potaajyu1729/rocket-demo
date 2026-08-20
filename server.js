@@ -82,6 +82,14 @@ async function api(request, url) {
     if (room.participants.size < 2) return json({ error: "NEED_TEAM" }, 400);
     room.phase = "quiz"; room.startedAt = Date.now(); return json({ state: stateFor(room, data.viewer) });
   }
+  if (request.method === "POST" && path === "/api/report") {
+    const data = await body(request); const room = rooms.get(String(data.code ?? "").toUpperCase());
+    const person = room?.participants.get(data.viewer);
+    if (!room || !person) return json({ error: "SESSION_NOT_FOUND" }, 404);
+    if (room.phase !== "launch" && room.phase !== "results") return json({ error: "REPORT_NOT_READY" }, 409);
+    room.phase = "results";
+    return json({ state: stateFor(room, person.id) });
+  }
   if (request.method === "POST" && path === "/api/answer") {
     const data = await body(request); const room = rooms.get(String(data.code ?? "").toUpperCase()); const person = room?.participants.get(data.viewer);
     if (!room || !person) return json({ error: "SESSION_NOT_FOUND" }, 404);
